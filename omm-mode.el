@@ -8,7 +8,7 @@
 ;; Maintainer: pogin
 ;; Keywords: convenience, frames
 ;; Created: 2011/07/04
-;; Version: 0.1.2
+;; Version: 0.1.3
 ;; URL: 
 ;; Site: http://d.hatena.ne.jp/pogin/
 
