@@ -8,7 +8,7 @@
 ;; Maintainer: pogin
 ;; Keywords: convenience, frames
 ;; Created: 2011/07/04
-;; Version: 0.1.3
+;; Version: 0.1.4
 ;; URL: 
 ;; Site: http://d.hatena.ne.jp/pogin/
 
@@ -67,13 +67,15 @@
 
 
 ;;; Change log:
+;; 2011/09/13
+;;     Add omm-mode-change-mode-line to find-file-hook
 ;; 2011/09/11
-;;     omm-mode was globalization
+;;    omm-mode was globalization
 ;; 2011/09/05
-;;     Add function; omm-mode-linum-toggle 
-;;     Add function: omm-mode-change-mode-line
+;;    Add function; omm-mode-linum-toggle 
+;;    Add function: omm-mode-change-mode-line
 ;; 2011/07/04
-;;     Created
+;;    Created
 
 ;;; TODO
 ;;
@@ -81,6 +83,7 @@
 ;; make Change Background Picture function?
 ;; make Timer function 
 ;; make defcustom etc
+;; make fullscreen function
 
 ;;; Code
 (defvar omm-mode-line-conf-list mode-line-format
@@ -142,7 +145,11 @@ If you eval omm-mode-toggle, omm-mode-start-var change nil")
   (if (fboundp 'elscreen-mode)
       (elscreen-mode -1))
   (if (fboundp 'tabbar-mode)
-      (tabbar-mode -1)))
+      (tabbar-mode -1))
+  (setq omm-mode-start-var t))
+
+;;test code
+;;(omm-mode-style-on)
 
 (defun omm-mode-style-off ()
   (interactive)
@@ -160,7 +167,11 @@ If you eval omm-mode-toggle, omm-mode-start-var change nil")
       (elscreen-mode t))
   (if (and (eq (first (nth 6 omm-init-list-flag)) t)
            (eq (second (nth 6 omm-init-list-flag)) t))
-      (tabbar-mode t)))
+      (tabbar-mode t))
+  (setq omm-mode-start-var nil))
+
+;;test code
+;;(omm-mode-style-off)
 
 (defun omm-mode-style-off-debug ()
 	(omm-mode-linum-toggle 1)
@@ -179,26 +190,34 @@ If you eval omm-mode-toggle, omm-mode-start-var change nil")
 
 (defun omm-mode-toggle ()
   (interactive)
-  (if (eq omm-mode-start-var t)
-	  (progn
-        (omm-mode-style-off)
-        (setq omm-mode-start-var nil))
-    (progn
-      (omm-mode-style-on)
-      (setq omm-mode-start-var t))))
+  (if (eq omm-mode-start-var nil)
+        (omm-mode-style-on)
+      (omm-mode-style-off)))
 
 ;;test code
 ;;(omm-mode-toggle)
 
 (defun omm-mode-start ()
-  (omm-mode-toggle)
+  (omm-mode-style-on)
   (set-keymap-parent omm-minor-mode-child-map
                      omm-mode-map)
   (omm-mode-run-hook)
-  )
+  (add-hook 'find-file-hook
+            (lambda ()
+              (omm-mode-change-mode-line nil))
+            ))
+
+;;test code
+;; (omm-mode-start)
 
 (defun omm-mode-stop ()
+  (remove-hook 'after-init-hook
+               (lambda ()
+                 omm-mode-change-mode-line nil))
   (omm-mode-style-off))
+
+;;test code
+;;(omm-mode-stop)
 
 (defun omm-mode-define-keymap ()
   (let ((map (make-sparse-keymap)))
@@ -211,10 +230,12 @@ If you eval omm-mode-toggle, omm-mode-start-var change nil")
 ;; (pop omm-mode-map)
 (defvar omm-minor-mode-child-map (make-sparse-keymap))
 (define-minor-mode omm-mode
-  :init-value t
+  "Ommwriter like mode"
+  :require 'omm
+  :group 'omm
   :global t
+  :init-value t
   :keymap omm-mode-map
-  :group omm-mode
   (if omm-mode
       (omm-mode-start)
  	(omm-mode-stop)))
@@ -222,12 +243,6 @@ If you eval omm-mode-toggle, omm-mode-start-var change nil")
 (defun omm-mode-run-hook ()
   (run-hooks 'omm-mode-hook))
 
-(defun omm-mode-add-hook ()
-  (add-hook 'omm-mode-hook
-            (if (eq omm-mode-start-var nil)
-                (omm-mode-style-on))))
-
-;;(pop omm-mode-hook)
 
 (provide 'omm-mode)
 
