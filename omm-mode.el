@@ -69,7 +69,6 @@
 ;;; Change log:
 ;; 2011/09/22
 ;;    Add fullscreen fuction
-;;    Add fullscreen fuction
 ;; 2011/09/13
 ;;    Add omm-mode-change-mode-line to find-file-hook
 ;; 2011/09/11
@@ -100,7 +99,8 @@
 	  ;; WM_SYSCOMMAND restore #xf120
 	  (w32-send-sys-command 61728)
 	(progn (set-frame-parameter nil 'width 82)
-		   (set-frame-parameter nil 'fullscreen 'fullheight))))
+		   (set-frame-parameter nil 'fullscreen 'fullheight)))
+  (omm-mode-fullscreen-state-toggle nil))
 
 ;;test code
 ;;(omm-mode-non-fullscreen)
@@ -110,21 +110,22 @@
   (if (fboundp 'w32-send-sys-command)
 	  ;; WM_SYSCOMMAND maximaze #xf030
 	  (w32-send-sys-command 61488)
-	(set-frame-parameter nil 'fullscreen 'fullboth)))
+	(set-frame-parameter nil 'fullscreen 'fullboth))
+  (omm-mode-fullscreen-state-toggle t))
 
 ;;test code
 ;;(omm-mode-fullscreen)
 
 
 (defun omm-mode-fullscreen-state-toggle (state)
-  (setq omm-mode-fullscreen-p (not omm-mode-fullscreen-p)))
+  (setq omm-mode-fullscreen-p state)
 
 ;;test code
 ;;(omm-mode-fullscreen-state-toggle omm-mode-fullscreen-p)
 
 (defun omm-mode-toggle-fullscreen ()
   (interactive)
-  (if (omm-mode-fullscreen-state-toggle omm-mode-fullscreen-p)
+  (if omm-mode-fullscreen-p
 	  (omm-mode-non-fullscreen)
 	(omm-mode-fullscreen)))
 
