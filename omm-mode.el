@@ -8,7 +8,7 @@
 ;; Maintainer: pogin
 ;; Keywords: convenience, frames
 ;; Created: 2011/07/04
-;; Version: 0.1.4
+;; Version: 0.0.5
 ;; URL: 
 ;; Site: http://d.hatena.ne.jp/pogin/
 
@@ -67,8 +67,10 @@
 
 
 ;;; Change log:
+;; 2011/09/22
+;;    Add fullscreen fuction
 ;; 2011/09/13
-;;     Add omm-mode-change-mode-line to find-file-hook
+;;    Add omm-mode-change-mode-line to find-file-hook
 ;; 2011/09/11
 ;;    omm-mode was globalization
 ;; 2011/09/05
@@ -83,9 +85,51 @@
 ;; make Change Background Picture function?
 ;; make Timer function 
 ;; make defcustom etc
-;; make fullscreen function
+;; make fullscreen function %50 complete
+;; make only current buffer to bunish gui
+;; make fringe to narrow function
 
 ;;; Code
+
+(defvar omm-mode-fullscreen-p t "Check if fullscreen is on or off")
+
+(defun omm-mode-non-fullscreen ()
+  (interactive)
+  (if (fboundp 'w32-send-sys-command)
+	  ;; WM_SYSCOMMAND restore #xf120
+	  (w32-send-sys-command 61728)
+	(progn (set-frame-parameter nil 'width 82)
+		   (set-frame-parameter nil 'fullscreen 'fullheight))))
+
+;;test code
+;;(omm-mode-non-fullscreen)
+
+(defun omm-mode-fullscreen ()
+  (interactive)
+  (if (fboundp 'w32-send-sys-command)
+	  ;; WM_SYSCOMMAND maximaze #xf030
+	  (w32-send-sys-command 61488)
+	(set-frame-parameter nil 'fullscreen 'fullboth)))
+
+;;test code
+;;(omm-mode-fullscreen)
+
+
+(defun omm-mode-fullscreen-state-toggle (state)
+  (setq omm-mode-fullscreen-p (not omm-mode-fullscreen-p)))
+
+;;test code
+;;(omm-mode-fullscreen-state-toggle omm-mode-fullscreen-p)
+
+(defun omm-mode-toggle-fullscreen ()
+  (interactive)
+  (if (omm-mode-fullscreen-state-toggle omm-mode-fullscreen-p)
+	  (omm-mode-non-fullscreen)
+	(omm-mode-fullscreen)))
+
+;;test code
+;;(omm-mode-toggle-fullscreen)
+
 (defvar omm-mode-line-conf-list mode-line-format
   "Save mode-line-format")
 ;;omm-mode-line-conf-list
@@ -115,7 +159,8 @@ If you eval omm-mode-toggle, omm-mode-start-var change nil")
   (save-excursion
 	(dolist (buf (buffer-list))
 	  (set-buffer buf)
-	  (setq mode-line-format apply-state))))
+	  (setq mode-line-format apply-state))
+	(setq-default mode-line-format apply-state)))
 
 ;;test code
 ;; (omm-mode-change-mode-line omm-mode-line-conf-list)
@@ -201,20 +246,20 @@ If you eval omm-mode-toggle, omm-mode-start-var change nil")
   (omm-mode-style-on)
   (set-keymap-parent omm-minor-mode-child-map
                      omm-mode-map)
-  (omm-mode-run-hook)
-  (add-hook 'find-file-hook
-            (lambda ()
-              (omm-mode-change-mode-line nil))
-            ))
+  (omm-mode-run-hook))
+  ;; (add-hook 'find-file-hook
+  ;;           (lambda ()
+  ;;             (omm-mode-change-mode-line nil))
+  ))
 
 ;;test code
 ;; (omm-mode-start)
 
 (defun omm-mode-stop ()
   (remove-hook 'after-init-hook
-               (lambda ()
-                 omm-mode-change-mode-line nil))
-  (omm-mode-style-off))
+               ;; (lambda ()
+               ;;   omm-mode-change-mode-line nil))
+			   (omm-mode-style-off))
 
 ;;test code
 ;;(omm-mode-stop)
@@ -222,11 +267,17 @@ If you eval omm-mode-toggle, omm-mode-start-var change nil")
 (defun omm-mode-define-keymap ()
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c C-o") 'omm-mode-toggle)
+	(define-key map (kbd "<f11>") 'omm-mode-toggle-fullscreen)
     map))
+
+;;test code
+;;(omm-mode-define-keymap)
 
 (defvar omm-mode-map
   (omm-mode-define-keymap))
 
+;;test code
+;;omm-mode-map
 ;; (pop omm-mode-map)
 (defvar omm-minor-mode-child-map (make-sparse-keymap))
 (define-minor-mode omm-mode
@@ -247,3 +298,4 @@ If you eval omm-mode-toggle, omm-mode-start-var change nil")
 (provide 'omm-mode)
 
 ;;; filename ends here
+
