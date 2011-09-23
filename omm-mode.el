@@ -96,10 +96,10 @@
 (defun omm-mode-non-fullscreen ()
   (interactive)
   (if (fboundp 'w32-send-sys-command)
-	  ;; WM_SYSCOMMAND restore #xf120
-	  (w32-send-sys-command 61728)
-	(progn (set-frame-parameter nil 'width 82)
-		   (set-frame-parameter nil 'fullscreen 'fullheight)))
+      ;; WM_SYSCOMMAND restore #xf120
+      (w32-send-sys-command 61728)
+    (progn (set-frame-parameter nil 'width 82)
+           (set-frame-parameter nil 'fullscreen 'fullheight)))
   (omm-mode-fullscreen-state-toggle nil))
 
 ;;test code
@@ -108,9 +108,9 @@
 (defun omm-mode-fullscreen ()
   (interactive)
   (if (fboundp 'w32-send-sys-command)
-	  ;; WM_SYSCOMMAND maximaze #xf030
-	  (w32-send-sys-command 61488)
-	(set-frame-parameter nil 'fullscreen 'fullboth))
+      ;; WM_SYSCOMMAND maximaze #xf030
+      (w32-send-sys-command 61488)
+    (set-frame-parameter nil 'fullscreen 'fullboth))
   (omm-mode-fullscreen-state-toggle t))
 
 ;;test code
@@ -118,7 +118,7 @@
 
 
 (defun omm-mode-fullscreen-state-toggle (state)
-  (setq omm-mode-fullscreen-p state)
+  (setq omm-mode-fullscreen-p state))
 
 ;;test code
 ;;(omm-mode-fullscreen-state-toggle omm-mode-fullscreen-p)
@@ -126,8 +126,8 @@
 (defun omm-mode-toggle-fullscreen ()
   (interactive)
   (if omm-mode-fullscreen-p
-	  (omm-mode-non-fullscreen)
-	(omm-mode-fullscreen)))
+      (omm-mode-non-fullscreen)
+    (omm-mode-fullscreen)))
 
 ;;test code
 ;;(omm-mode-toggle-fullscreen)
@@ -144,25 +144,25 @@ If you eval omm-mode-toggle, omm-mode-start-var change nil")
 
 (defconst omm-init-list-flag 
   (list 
-	 (eq linum-mode t)
-	 (eq scroll-bar-mode t)
-	 (eq tool-bar-mode t)
-	 (eq menu-bar-mode t)
-	 omm-mode-line-conf-list
-	(if (fboundp 'elscreen-mode)
-		(list t (eq elscreen-mode t))
-	  (list nil nil))
-	(if (fboundp 'tabbar-mode)
-		(list t (eq tabbar-mode t))
-	  (list nil nil))
-	))
+     (eq linum-mode t)
+     (eq scroll-bar-mode t)
+     (eq tool-bar-mode t)
+     (eq menu-bar-mode t)
+     omm-mode-line-conf-list
+    (if (fboundp 'elscreen-mode)
+        (list t (eq elscreen-mode t))
+      (list nil nil))
+    (if (fboundp 'tabbar-mode)
+        (list t (eq tabbar-mode t))
+      (list nil nil))
+    ))
 
 (defun omm-mode-change-mode-line (apply-state)
   (save-excursion
-	(dolist (buf (buffer-list))
-	  (set-buffer buf)
-	  (setq mode-line-format apply-state))
-	(setq-default mode-line-format apply-state)))
+    (dolist (buf (buffer-list))
+      (set-buffer buf)
+      (setq mode-line-format apply-state))
+    (setq-default mode-line-format apply-state)))
 
 ;;test code
 ;; (omm-mode-change-mode-line omm-mode-line-conf-list)
@@ -170,12 +170,13 @@ If you eval omm-mode-toggle, omm-mode-start-var change nil")
 
 (defun omm-mode-linum-toggle (num)
   (save-excursion
-	(dolist (buf (buffer-list))
-	  (set-buffer buf)
-	  (linum-mode num))
-	(if (equal num -1)
-		(global-linum-mode -1)
-	  (global-linum-mode 1))))
+    (dolist (buf (buffer-list))
+      (set-buffer buf)
+      (linum-mode num))
+    (if (fboundp 'linum-mode)
+        (if (equal num -1)
+            (global-linum-mode -1)
+          (global-linum-mode 1)))))
 
 ;;test code
 ;; (omm-mode-linum-toggle -1)
@@ -221,16 +222,16 @@ If you eval omm-mode-toggle, omm-mode-start-var change nil")
 ;;(omm-mode-style-off)
 
 (defun omm-mode-style-off-debug ()
-	(omm-mode-linum-toggle 1)
-	(scroll-bar-mode -1)
-	(tool-bar-mode 1)
-	(menu-bar-mode 1)
-	(omm-mode-change-mode-line omm-mode-line-conf-list)
-	(if (fboundp 'elscreen-mode)
-		(elscreen-mode -1))
-	(if (fboundp 'tabbar-mode)
-		(tabbar-mode 1))
-	(setq omm-mode-start-var nil))
+    (omm-mode-linum-toggle 1)
+    (scroll-bar-mode -1)
+    (tool-bar-mode 1)
+    (menu-bar-mode 1)
+    (omm-mode-change-mode-line omm-mode-line-conf-list)
+    (if (fboundp 'elscreen-mode)
+        (elscreen-mode -1))
+    (if (fboundp 'tabbar-mode)
+        (tabbar-mode 1))
+    (setq omm-mode-start-var nil))
 
 ;;test code
 ;; (omm-mode-style-off-debug)
@@ -249,6 +250,7 @@ If you eval omm-mode-toggle, omm-mode-start-var change nil")
   (set-keymap-parent omm-minor-mode-child-map
                      omm-mode-map)
   (omm-mode-run-hook)
+  (omm-mode-fullscreen)
   ;; (add-hook 'find-file-hook
   ;;           (lambda ()
   ;;             (omm-mode-change-mode-line nil))
@@ -261,7 +263,7 @@ If you eval omm-mode-toggle, omm-mode-start-var change nil")
   (remove-hook 'after-init-hook
                ;; (lambda ()
                ;;   omm-mode-change-mode-line nil))
-			   (omm-mode-style-off)))
+               (omm-mode-style-off)))
 
 ;;test code
 ;;(omm-mode-stop)
@@ -269,7 +271,7 @@ If you eval omm-mode-toggle, omm-mode-start-var change nil")
 (defun omm-mode-define-keymap ()
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c C-o") 'omm-mode-toggle)
-	(define-key map (kbd "<f11>") 'omm-mode-toggle-fullscreen)
+    (define-key map (kbd "<f11>") 'omm-mode-toggle-fullscreen)
     map))
 
 ;;test code
@@ -291,7 +293,7 @@ If you eval omm-mode-toggle, omm-mode-start-var change nil")
   :keymap omm-mode-map
   (if omm-mode
       (omm-mode-start)
- 	(omm-mode-stop)))
+    (omm-mode-stop)))
 
 (defun omm-mode-run-hook ()
   (run-hooks 'omm-mode-hook))
