@@ -248,11 +248,11 @@ If you eval omm-mode-toggle, omm-mode-start-var change nil")
   (omm-mode-style-on)
   (set-keymap-parent omm-minor-mode-child-map
                      omm-mode-map)
-  (omm-mode-run-hook))
+  (omm-mode-run-hook)
   ;; (add-hook 'find-file-hook
   ;;           (lambda ()
   ;;             (omm-mode-change-mode-line nil))
-  ))
+  )
 
 ;;test code
 ;; (omm-mode-start)
@@ -261,7 +261,7 @@ If you eval omm-mode-toggle, omm-mode-start-var change nil")
   (remove-hook 'after-init-hook
                ;; (lambda ()
                ;;   omm-mode-change-mode-line nil))
-			   (omm-mode-style-off))
+			   (omm-mode-style-off)))
 
 ;;test code
 ;;(omm-mode-stop)
