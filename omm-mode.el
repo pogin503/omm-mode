@@ -6,7 +6,7 @@
 
 ;; Author: pogin
 ;; Maintainer: pogin
-;; Keywords: convenience, frames
+;; Keywords: convenience, frames, emulation
 ;; Created: 2011/07/04
 ;; Version: 0.0.5
 ;; URL: 
@@ -46,7 +46,7 @@
 ;;; Commands:
 ;;
 ;; `omm-mode-toggle'
-;; toggle omm-mode on/off 
+;; toggle omm-mode-style on/off 
 ;;
 ;; `omm-mode-style-on'
 ;; bunish tool-bar, menu-bar, mode-line etc
@@ -67,8 +67,12 @@
 
 
 ;;; Change log:
+;; 2011/09/24
+;;    Add margins functions
+;;    Modified :  omm-mode-linum-toggle
+;;        When linum-mode is not found, this function does not start process.
 ;; 2011/09/22
-;;    Add fullscreen fuction
+;;    Add fullscreen fuctions
 ;; 2011/09/13
 ;;    Add omm-mode-change-mode-line to find-file-hook
 ;; 2011/09/11
@@ -91,6 +95,54 @@
 
 ;;; Code
 
+
+;;fringe section
+(defvar omm-mode-left-margin 30
+  "Margin to add to the left side of the screen, depends on your resolution and prefered column width")
+
+(defvar omm-mode-right-margin 30
+  "Margin to add to the right side of the screen, depends on your resolution and prefered column width")
+
+(defvar omm-mode-enable-multi-monitor-support t
+  "Whether to enable multi-frame (i.e multiple monitor) support. An option since this feature is experimental")
+
+(defvar omm-mode-enable-longline-wrap t
+  "If longlines-mode is enabled, should longlines-wrap-follows-window-size also be enabled when going into omm mode?")
+
+
+(defvar omm-mode-margin-state t)
+
+(defun omm-mode-margins-toggle ()
+  (interactive)
+  (if omm-mode-margin-state
+	  (progn 
+		(setq omm-mode-margin-state nil)
+		(omm-mode-update-window omm-mode-left-margin omm-mode-right-margin))
+	(progn
+	  (setq omm-mode-margin-state t)
+	  (omm-mode-update-window 0 0))))
+
+;;test code 
+;;(omm-mode-margins-toggle)
+
+(defun omm-mode-update-window (omm-mode-left-margin-width omm-mode-right-margin-width)
+  (let (
+		(left-margin omm-mode-left-margin-width)
+		(right-margin omm-mode-right-margin-width)
+		)
+	(set-window-margins (selected-window)
+						left-margin
+						right-margin)
+	))
+
+
+;; left-margin-width
+;; right-margin-width
+;;test code
+;;(omm-mode-update-window omm-mode-left-margin omm-mode-right-margin)
+;;(omm-mode-update-window 0 0)
+
+;;fullscreen function section
 (defvar omm-mode-fullscreen-p t "Check if fullscreen is on or off")
 
 (defun omm-mode-non-fullscreen ()
@@ -169,11 +221,11 @@ If you eval omm-mode-toggle, omm-mode-start-var change nil")
 ;; (omm-mode-change-mode-line nil)
 
 (defun omm-mode-linum-toggle (num)
-  (save-excursion
-    (dolist (buf (buffer-list))
-      (set-buffer buf)
-      (linum-mode num))
-    (if (fboundp 'linum-mode)
+  (if (fboundp 'linum-mode)
+	  (save-excursion
+		(dolist (buf (buffer-list))
+		  (set-buffer buf)
+		  (linum-mode num))
         (if (equal num -1)
             (global-linum-mode -1)
           (global-linum-mode 1)))))
@@ -239,7 +291,9 @@ If you eval omm-mode-toggle, omm-mode-start-var change nil")
 (defun omm-mode-toggle ()
   (interactive)
   (if (eq omm-mode-start-var nil)
-        (omm-mode-style-on)
+	  (progn 
+        (omm-mode-style-on))
+		
       (omm-mode-style-off)))
 
 ;;test code
@@ -260,10 +314,12 @@ If you eval omm-mode-toggle, omm-mode-start-var change nil")
 ;; (omm-mode-start)
 
 (defun omm-mode-stop ()
-  (remove-hook 'after-init-hook
-               ;; (lambda ()
-               ;;   omm-mode-change-mode-line nil))
-               (omm-mode-style-off)))
+  ;;  (remove-hook 'after-init-hook)
+  ;; (lambda ()
+  ;;   omm-mode-change-mode-line nil))
+  (omm-mode-style-off)
+  (omm-mode-non-fullscreen)
+  )
 
 ;;test code
 ;;(omm-mode-stop)
