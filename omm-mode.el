@@ -67,6 +67,8 @@
 
 
 ;;; Change log:
+;; 2011/09/28
+;;    omm-mode-margins-toggle use &optional keyword.
 ;; 2011/09/24
 ;;    Add margins functions
 ;;    Modified :  omm-mode-linum-toggle
@@ -97,38 +99,54 @@
 
 
 ;;fringe section
-(defvar omm-mode-left-margin 30
-  "Margin to add to the left side of the screen, depends on your resolution and prefered column width")
+(defvar omm-mode-left-margin 25
+  "Margin to add to the left side of the screen, 
+depends on your resolution and prefered column width")
 
-(defvar omm-mode-right-margin 30
-  "Margin to add to the right side of the screen, depends on your resolution and prefered column width")
+(defvar omm-mode-right-margin 25
+  "Margin to add to the right side of the screen,
+ depends on your resolution and prefered column width")
 
 (defvar omm-mode-enable-multi-monitor-support t
-  "Whether to enable multi-frame (i.e multiple monitor) support. An option since this feature is experimental")
+  "Whether to enable multi-frame (i.e multiple monitor)
+ support. An option since this feature is experimental")
 
 (defvar omm-mode-enable-longline-wrap t
-  "If longlines-mode is enabled, should longlines-wrap-follows-window-size also be enabled when going into omm mode?")
+  "If longlines-mode is enabled, should 
+longlines-wrap-follows-window-size also be enabled when
+ going into omm mode?")
 
 
 (defvar omm-mode-margin-state t)
 
-(defun omm-mode-margins-toggle ()
+(defun omm-mode-margins-toggle (&optional omm-mode-arg-margins-state)
   (interactive)
-  (if omm-mode-margin-state
-	  (progn 
-		(setq omm-mode-margin-state nil)
-		(omm-mode-update-window omm-mode-left-margin omm-mode-right-margin))
-	(progn
-	  (setq omm-mode-margin-state t)
-	  (omm-mode-update-window 0 0))))
+  (let* ((state
+		  (if (fboundp 'omm-mode-arg-margins-state)
+			  (progn
+				omm-mode-arg-margins-state)
+			(progn 
+			  ;; (assert (fboundp 'omm-mode-arg-margins-state) nil)
+			  omm-mode-margin-state)
+			  )))
+	;; (assert state nil)
+	(if state
+		(progn 
+		  (setq omm-mode-margin-state nil)
+		  (omm-mode-update-window  omm-mode-left-margin  omm-mode-right-margin))
+	  (progn
+		(setq omm-mode-margin-state t)
+		(omm-mode-update-window 0 0)))))
 
 ;;test code 
 ;;(omm-mode-margins-toggle)
+;;(omm-mode-margins-toggle t)
+;;(omm-mode-margins-toggle nil)
 
-(defun omm-mode-update-window (omm-mode-left-margin-width omm-mode-right-margin-width)
+(defun omm-mode-update-window (omm-mode-left-margin-width  omm-mode-right-margin-width)
   (let (
-		(left-margin omm-mode-left-margin-width)
-		(right-margin omm-mode-right-margin-width)
+		(left-margin   omm-mode-left-margin-width)
+		(right-margin  omm-mode-right-margin-width)
 		)
 	(set-window-margins (selected-window)
 						left-margin
@@ -139,7 +157,7 @@
 ;; left-margin-width
 ;; right-margin-width
 ;;test code
-;;(omm-mode-update-window omm-mode-left-margin omm-mode-right-margin)
+;;(omm-mode-update-window  omm-mode-left-margin  omm-mode-right-margin)
 ;;(omm-mode-update-window 0 0)
 
 ;;fullscreen function section
@@ -150,8 +168,8 @@
   (if (fboundp 'w32-send-sys-command)
       ;; WM_SYSCOMMAND restore #xf120
       (w32-send-sys-command 61728)
-    (progn (set-frame-parameter nil 'width 82)
-           (set-frame-parameter nil 'fullscreen 'fullheight)))
+    (progn (set-frame-parameter  nil  'width 82)
+           (set-frame-parameter  nil  'fullscreen  'fullheight)))
   (omm-mode-fullscreen-state-toggle nil))
 
 ;;test code
