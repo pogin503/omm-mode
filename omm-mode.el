@@ -327,7 +327,7 @@ If you eval omm-mode-toggle, omm-mode-start-var change nil")
 ;;test code 
 ;;(omm-mode-start)
 
-(defun omm-minor-mode-stop ()
+(defun omm-mode-stop ()
   (interactive)
   (omm-mode-style-off)
   (omm-mode-non-fullscreen)
