@@ -318,29 +318,51 @@ If you eval omm-mode-toggle, omm-mode-start-var change nil")
 ;;(omm-mode-toggle)
 
 (defun omm-mode-start ()
+  (interactive)
+  (omm-mode-style-on)
+  (omm-mode-fullscreen)
+  (omm-mode-margins-toggle t)
+  )
+
+;;test code 
+;;(omm-mode-start)
+
+(defun omm-minor-mode-stop ()
+  (interactive)
+  (omm-mode-style-off)
+  (omm-mode-non-fullscreen)
+  (omm-mode-margins-toggle nil)
+  )
+
+;;test code 
+;;(omm-mode-stop)
+
+(defun omm-minor-mode-start ()
   (omm-mode-style-on)
   (set-keymap-parent omm-minor-mode-child-map
                      omm-mode-map)
   (omm-mode-run-hook)
   (omm-mode-fullscreen)
+  (omm-mode-margins-toggle t)
   ;; (add-hook 'find-file-hook
   ;;           (lambda ()
   ;;             (omm-mode-change-mode-line nil))
   )
 
 ;;test code
-;; (omm-mode-start)
+;; (omm-minor-mode-start)
 
-(defun omm-mode-stop ()
+(defun omm-minor-mode-stop ()
   ;;  (remove-hook 'after-init-hook)
   ;; (lambda ()
   ;;   omm-mode-change-mode-line nil))
   (omm-mode-style-off)
   (omm-mode-non-fullscreen)
+  (omm-mode-margins-toggle nil)
   )
 
 ;;test code
-;;(omm-mode-stop)
+;;(omm-minor-mode-stop)
 
 (defun omm-mode-define-keymap ()
   (let ((map (make-sparse-keymap)))
@@ -366,8 +388,8 @@ If you eval omm-mode-toggle, omm-mode-start-var change nil")
   :init-value t
   :keymap omm-mode-map
   (if omm-mode
-      (omm-mode-start)
-    (omm-mode-stop)))
+      (omm-minor-mode-start)
+    (omm-minor-mode-stop)))
 
 (defun omm-mode-run-hook ()
   (run-hooks 'omm-mode-hook))
