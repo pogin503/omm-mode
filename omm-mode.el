@@ -100,22 +100,30 @@
 
 
 ;;fringe section
-(defvar omm-left-margin 25
+(defcustom omm-left-margin 25
   "Margin to add to the left side of the screen, 
-depends on your resolution and prefered column width")
+depends on your resolution and prefered column width"
+  :type 'integer
+  :group 'omm)
 
-(defvar omm-right-margin 25
+(defcustom omm-right-margin 25
   "Margin to add to the right side of the screen,
- depends on your resolution and prefered column width")
+ depends on your resolution and prefered column width"
+  :type 'integer
+  :group 'omm)
 
-(defvar omm-enable-multi-monitor-support t
-  "Whether to enable multi-frame (i.e multiple monitor)
- support. An option since this feature is experimental")
+(defcustom omm-enable-multi-monitor-support t
+  "Whether to enable multi-frame i.e multiple monitor
+ support. An option since this feature is experimental"
+  :type 'boolean
+  :group 'omm)
 
-(defvar omm-enable-longline-wrap t
+(defcustom omm-enable-longline-wrap t
   "If longlines-mode is enabled, should 
 longlines-wrap-follows-window-size also be enabled when
- going into omm mode?")
+ going into omm mode?"
+  :type 'boolean
+  :group 'omm)
 
 
 (defun omm-update-window (omm-left-margin-width  omm-right-margin-width)
@@ -127,17 +135,33 @@ longlines-wrap-follows-window-size also be enabled when
 						left-margin
 						right-margin)
 	))
+(defvar *omm-memtable* (make-hash-table))
 
+(defun* omm-recall (key val &optional (frame (selected-frame)))
+  (cdr (assoc key (gethash frame *omm-memtable*))))
 
-;; left-margin-width
+(defun* omm-remember (key val &optional (frame (selected-frame)))
+  (let* ((kvlist (gethash frame *omm-memtable*))
+         (target (assoc key kvlist)))
+    (cond (target
+           (setf (cdr target) val))
+          (t
+           (puthash frame (cons (assq 'key val)
+                                kvlist) *omm-memtable*)))))
+
+(defun omm-recall-frame-size ()
+  (interactive)
+  (modify-frame-parameters (selected-window)
+                           '(left . nil)))
+;; left-margin-widtht
 ;; right-margin-width
-(current-left-margin)
-(set-left-margin 25)
+;; (current-left-margin)
+;; (set-left-margin 25)
 ;;test code
 ;;(omm-update-window  omm-left-margin  omm-right-margin)
 ;;(omm-update-window 0 0)
 
-(defvar omm-margin-state t)
+(defvar omm-margin-state nil)
 
 (defun omm-margins-toggle (&optional omm-arg-margins-state)
   (interactive)
@@ -313,12 +337,11 @@ If you eval omm-toggle, omm-start-var change nil")
 ;;test code
 ;; (omm-style-off-debug)
 
-(defun omm-toggle ()
+(defun omm-toggle-style ()
   (interactive)
   (if (eq omm-start-var nil)
 	  (progn 
         (omm-style-on))
-		
       (omm-style-off)))
 
 ;;test code
@@ -392,11 +415,11 @@ If you eval omm-toggle, omm-start-var change nil")
   :require 'omm
   :group 'omm
   :global t
-  :init-value t
+  :init-value nil
   :keymap omm-mode-map
   (if omm-mode
-      (omm-minor-mode-start)
-    (omm-minor-mode-stop)))
+	  (omm-minor-mode-stop)
+	(omm-minor-mode-start)))
 
 (defun omm-run-hook ()
   (run-hooks 'omm-hook))
