@@ -247,6 +247,8 @@ longlines-wrap-follows-window-size also be enabled when
 ;;(omm-margins-toggle)
 ;;(omm-remember-margins)
 ;;(omm-recall-margins)
+;; left-margin-width
+;; right-margin-width
 
 ;;---- fullscreen function section
 (defvar omm-fullscreen-p t 
@@ -454,9 +456,9 @@ If you eval omm-toggle-layout, omm-start-var change nil")
 
 (defun omm-start ()
   (interactive)
+  (omm-remember-margins)
   (omm-layout-on)
   (omm-fullscreen)
-  (omm-remember-margins)
   )
 
 ;;test code 
@@ -477,9 +479,9 @@ If you eval omm-toggle-layout, omm-start-var change nil")
   (set-keymap-parent omm-minor-mode-child-map
                      omm-mode-map)
   (omm-run-hook)
+  (omm-remember-frame-size)
   (omm-fullscreen)
   (omm-remember-margins)
-  (omm-remember-frame-size)
   ;; (add-hook 'find-file-hook
   ;;           (lambda ()
   ;;             (omm-change-mode-line nil))
@@ -504,7 +506,7 @@ If you eval omm-toggle-layout, omm-start-var change nil")
 (defun omm-define-keymap ()
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c C-o") 'omm-toggle-layout)
-    (define-key map (kbd "<f11>") 'omm-togglett-fullscreen)
+    (define-key map (kbd "<f11>") 'omm-toggle-fullscreen)
     map))
 
 ;;test code
@@ -516,7 +518,9 @@ If you eval omm-toggle-layout, omm-start-var change nil")
 ;;test code
 ;;omm-mode-map
 ;; (pop omm-mode-map)
+
 (defvar omm-minor-mode-child-map (make-sparse-keymap))
+
 (define-minor-mode omm-mode
   "Ommwriter like mode"
   :require 'omm
@@ -531,6 +535,24 @@ If you eval omm-toggle-layout, omm-start-var change nil")
 
 (defun omm-run-hook ()
   (run-hooks 'omm-mode-hook))
+
+
+(dont-compile
+  (when (fboundp 'expectations)
+    (expectations
+     (expect t
+             (omm-mode 1))
+     (expect 25
+             left-margin-width)
+     (expect 25
+             right-margin-width)
+     (expect nil
+             (omm-mode -1))
+     (expect 0
+             left-margin-width)
+     (expect 0
+             right-margin-width)))
+  )
 
 
 (provide 'omm-mode)
