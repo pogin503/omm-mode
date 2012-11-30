@@ -1,7 +1,7 @@
 ;;;; omm-mode.el
 ;; -*- Mode: Emacs-Lisp -*-
 
-;; Copyright (C) pogin 
+;; Copyright (C) pogin
 
 
 ;; Author: pogin
@@ -9,7 +9,7 @@
 ;; Keywords: convenience, frames, emulation
 ;; Created: 2011/07/04
 ;; Version: 0.0.5
-;; URL: 
+;; URL:
 ;; Site: http://d.hatena.ne.jp/pogin/
 
 ;;; License
@@ -35,7 +35,6 @@
 ;; desired.  And put the following expression into your ~/.emacs.
 ;;
 ;; (require 'omm-mode)
-;; (omm-mode)
 ;;
 
 
@@ -46,19 +45,19 @@
 
 ;;; Commands:
 ;;
-;; `omm-toggle'
-;; toggle omm-style on/off 
+;; `omm-toggle-layout'
+;; toggle omm-layout on/off
 ;;
-;; `omm-style-on'
+;; `omm-layout-on'
 ;; bunish tool-bar, menu-bar, mode-line etc
 ;;
-;; `omm-style-off'
-;; omm-style off
+;; `omm-layout-off'
+;; omm-layout off
 ;; undo initial status
 
 ;;; Keybinds
 ;;
-;; C-c C-o: omm-toggle
+;; C-c C-o: omm-toggle-layout
 
 ;;; Customizable Options:
 ;;
@@ -81,7 +80,7 @@
 ;; 2011/09/11
 ;;    omm-mode was globalization
 ;; 2011/09/05
-;;    Add function; omm-linum-toggle 
+;;    Add function; omm-linum-toggle
 ;;    Add function: omm-change-mode-line
 ;; 2011/07/04
 ;;    Created
@@ -90,7 +89,7 @@
 ;;
 ;; make play-music function
 ;; make Change Background Picture function?
-;; make Timer function 
+;; make Timer function
 ;; make defcustom etc
 ;; make fullscreen function %50 complete
 ;; make only current buffer to bunish gui
@@ -98,85 +97,217 @@
 
 ;;; Code
 
+(eval-when-compile (require 'cl))
+
+;; (require 'frame-local-vars)
 
 ;;fringe section
-(defvar omm-left-margin 25
-  "Margin to add to the left side of the screen, 
-depends on your resolution and prefered column width")
+;;margin section
+(defcustom omm-left-margin 25
+  "Margin to add to the left side of the screen,
+depends on your resolution and prefered column width"
+  :type 'integer
+  :group 'omm)
 
-(defvar omm-right-margin 25
+(defcustom omm-right-margin 25
   "Margin to add to the right side of the screen,
- depends on your resolution and prefered column width")
+ depends on your resolution and prefered column width"
+  :type 'integer
+  :group 'omm)
 
-(defvar omm-enable-multi-monitor-support t
-  "Whether to enable multi-frame (i.e multiple monitor)
- support. An option since this feature is experimental")
+(defcustom omm-enable-multi-monitor-support t
+  "Whether to enable multi-frame i.e multiple monitor
+ support. An option since this feature is experimental"
+  :type 'boolean
+  :group 'omm)
 
-(defvar omm-enable-longline-wrap t
-  "If longlines-mode is enabled, should 
+(defcustom omm-enable-longline-wrap t
+  "If longlines-mode is enabled, should
 longlines-wrap-follows-window-size also be enabled when
- going into omm mode?")
+ going into omm mode?"
+  :type 'boolean
+  :group 'omm)
+
+(defvar omm-run-unix
+  (or (equal system-type 'gnu/linux)
+      (equal system-type 'usg-unix-v)
+      (equal system-type 'berkeley-unix)
+      ))
+
+(defvar omm-run-windows
+  (or (equal system-type 'windows-nt)
+      (equal system-type 'ms-dos)
+      ))
+(defvar omm-run-darwin (equal system-type 'darwin))
 
 
-(defun omm-update-window (omm-left-margin-width  omm-right-margin-width)
-  (let (
-		(left-margin   omm-left-margin-width)
-		(right-margin  omm-right-margin-width)
-		)
-	(set-window-margins (selected-window)
-						left-margin
-						right-margin)
-	))
+(defun omm-update-window ()
+  (set-window-margins (selected-window)
+                      left-margin-width
+                      right-margin-width))
 
-
-;; left-margin-width
-;; right-margin-width
-(current-left-margin)
-(set-left-margin 25)
 ;;test code
 ;;(omm-update-window  omm-left-margin  omm-right-margin)
 ;;(omm-update-window 0 0)
 
-(defvar omm-margin-state t)
+(defvar omm-mode-path ""
+  "For testing omm-mode file path")
 
-(defun omm-margins-toggle (&optional omm-arg-margins-state)
+;; test-code
+;; (setq omm-mode-path (concat user-emacs-directory "plugins/omm-mode"))
+
+
+(defvar *omm-memtable* (make-hash-table))
+
+(defun* omm-recall (key &optional (frame (selected-frame)))
+  (cdr (assoc key (gethash frame *omm-memtable*))))
+
+;;test code
+;;((assert (progn (omm-remember 'test (frame-parameter nil 'background-color)) (omm-recall 'test)))
+
+(defun* omm-remember (key val &optional (frame (selected-frame)))
+  (let* ((kvlist (gethash frame *omm-memtable*))
+         (target (assoc key kvlist)))
+    (cond (target
+           (setf (cdr target) val))
+          (t
+           (puthash frame (cons (cons key val)
+                                kvlist) *omm-memtable*)))))
+
+;; test code
+;; (omm-remember 'test (frame-parameter nil 'background-color))
+
+(defun omm-remember-frame-size ()
+  (omm-remember 'frame-width  (frame-parameter nil 'width))
+  (omm-remember 'frame-height (frame-parameter nil 'height))
+  (omm-remember 'frame-left   (frame-parameter nil 'left))
+  (omm-remember 'frame-top    (frame-parameter nil 'top))
+  )
+
+;; test-code
+;; (omm-remember-frame-size)
+(defun omm-recall-frame-size ()
   (interactive)
-  (let* ((state
-		  (if (boundp 'omm-arg-margins-state)
-              (progn
-                omm-arg-margins-state
-                (insert "t"))
-            
-			(progn 
-			  (assert (boundp 'omm-arg-margins-state) nil)
-              (assert (fboundp 'omm-arg-margins-state) nil)
-              (insert "nil")
-			  omm-margin-state)
-			  )))
-	;; (assert state t)
+  (modify-frame-parameters (selected-window)
+                           `((left . ,(omm-recall 'frame-left))
+                             (top . ,(omm-recall 'frame-top))
+                             (width . ,(omm-recall 'frame-width))
+                             (height . ,(omm-recall 'frame-height)))))
+;; test-code
+;; (omm-recall-frame-size)
+
+(defvar omm-layout-margin-state t)
+
+(defun omm-remember-margins ()
+  (omm-remember 'left-margin-width left-margin-width)
+  (omm-remember 'right-margin-width right-margin-width)
+  ;; (cond
+  ;;  (omm-enable-multi-monitor-support
+  ;;   (setq-default left-margin-width omm-left-margin)
+  ;;   (setq-default right-margin-width omm-right-margin))
+  ;;  (frame-local-variables-check t)
+  ;;  (t
+  (setq-default left-margin-width omm-left-margin)
+  (setq-default right-margin-width omm-right-margin)
+  ;; ))
+  (omm-update-window)
+  (setq omm-layout-margin-state nil)
+  )
+
+;;test code
+;;(omm-remember-margins)
+
+(defun omm-recall-margins ()
+  ;; (cond
+  ;;  (omm-enable-multi-monitor-support
+  ;;   (unset-frame-default 'left-margin-width)
+  ;;   (unset-frame-default 'right-margin-width)
+  ;;   (frame-local-variables-check t))
+  ;;  (t
+  (setq-default left-margin-width
+                (omm-recall 'left-margin-width))
+  (setq-default right-margin-width
+                (omm-recall 'right-margin-width))
+  ;; ))
+  (omm-update-window)
+  (setq omm-layout-margin-state t)
+  )
+
+;;test code
+;; (omm-recall-margins)
+
+(defun omm-margins-toggle ()
+  (interactive)
+  (let* ((state omm-layout-margin-state))
+    ;; (if (boundp 'omm-arg-margins-state)
+    ;;     (progn
+    ;;       omm-arg-margins-state)
+
+    ;;   (progn
+    ;;     (assert (boundp 'omm-arg-margins-state) nil)
+    ;;     (assert (fboundp 'omm-arg-margins-state) nil)
+    ;;     omm-layout-margin-state)
+    ;; )))
+	;;(assert state t)
 	(if state
-		(progn 
-		  (setq omm-margin-state nil)
-		  (omm-update-window  omm-left-margin  omm-right-margin))
-	  (progn
-		(setq omm-margin-state t)
-		(omm-update-window 0 0)))))
+		  (omm-remember-margins)
+		(omm-recall-margins))))
 
-;;test code 
+;;test code
 ;;(omm-margins-toggle)
-;;(omm-margins-toggle t)
-;;(omm-margins-toggle nil)
+;;(omm-remember-margins)
+;;(omm-recall-margins)
+;; left-margin-width
+;; right-margin-width
 
-;;fullscreen function section
-(defvar omm-fullscreen-p t "Check if fullscreen is on or off")
+;;---- fullscreen function section
+(defvar omm-fullscreen-p t
+  "Check if fullscreen is on or off")
 
+(defvar omm-w32toggletitle-exe-path nil
+  "To concat `omm-w32fullscreen-toggletitle-cmd' variable")
+
+(defvar omm-w32-fullscreen-toggletitle-cmd
+  (let ((str (buffer-file-name (current-buffer))))
+    (concat (substring str 0 (string-match "omm-mode.el" str))
+            "w32toggletitle.exe"))
+  ;; "c:/Users/ki3_user_RO/gnupack_devel-6.00/home/.emacs.d/plugins/omm-mode/w32toggletitle.exe"
+  "Path to w32toggletitle.exe command")
+;; test-code
+;;(assert (string= (expand-file-name (concat omm-mode-path "/w32toggletitle.exe")) (setq omm-w32-fullscreen-toggletitle-cmd  (let ((str (buffer-file-name (current-buffer)))) (concat (substring str 0 (string-match "omm-mode.el" str)) "w32toggletitle.exe")))))
+
+(defun omm-w32-fullscreen-toggle-titlebar ()
+  "Toggle display of the titlebar of frame (windows only)"
+  (interactive)
+  (call-process omm-w32-fullscreen-toggletitle-cmd
+		  nil nil nil
+		  (frame-parameter (selected-frame) 'window-id))
+  (sleep-for 0.2))
+
+(defun omm-w32-fullscreen-on ()
+  "Toggle fullscreen display of current frame (windows only)"
+  (omm-w32-fullscreen-toggle-titlebar)
+  (w32-send-sys-command 61488))
+
+
+;; test-code
+;; (omm-w32-fullscreen-on)
+(defun omm-w32-fullscreen-off ()
+  (w32-send-sys-command 61728)
+  (omm-w32-fullscreen-toggle-titlebar))
+
+;; test-code
+;; (omm-w32-fullscreen-off)
 (defun omm-non-fullscreen ()
   (interactive)
-  (if (fboundp 'w32-send-sys-command)
-      ;; WM_SYSCOMMAND restore #xf120
-      (w32-send-sys-command 61728)
-    (progn (set-frame-parameter  nil  'width 82)
-           (set-frame-parameter  nil  'fullscreen  'fullheight)))
+  (cond ((fboundp 'w32-send-sys-command)
+         ;; WM_SYSCOMMAND restore #xf120
+         (omm-w32-fullscreen-off))
+        ((equal omm-run-darwin t)
+         (set-frame-parameter  nil  'fullscreen  nil))
+        (t
+         ;;(equal omm-run-unix t)
+         (set-frame-parameter  nil  'fullscreen  nil)))
   (omm-fullscreen-state-toggle nil))
 
 ;;test code
@@ -184,10 +315,14 @@ longlines-wrap-follows-window-size also be enabled when
 
 (defun omm-fullscreen ()
   (interactive)
-  (if (fboundp 'w32-send-sys-command)
+  (cond ((fboundp 'w32-send-sys-command)
       ;; WM_SYSCOMMAND maximaze #xf030
-      (w32-send-sys-command 61488)
-    (set-frame-parameter nil 'fullscreen 'fullboth))
+         (omm-w32-fullscreen-on))
+        ((equal omm-run-darwin t)
+         (set-frame-parameter nil 'fullscreen 'fullboth))
+        (t
+         ;;(equal omm-run-unix t)
+         (set-frame-parameter  nil  'fullscreen  'fullboth)))
   (omm-fullscreen-state-toggle t))
 
 ;;test code
@@ -209,18 +344,59 @@ longlines-wrap-follows-window-size also be enabled when
 ;;test code
 ;;(omm-toggle-fullscreen)
 
+
+;;---- other setting
+
+(defvar omm-enable-longline-wrap t
+  "If longlines-mode is enabled, should longlines-wrap-follows-window-size
+ also be enabled when going into omm mode?")
+
+(defun omm-remember-longline ()
+  (omm-remember 'line-spacing (frame-parameter nil 'line-spacing))
+  (when (and  (boundp 'longlines-mode)
+              longlines-mode
+              omm-enable-longline-wrap)
+    (omm-remember 'longlines-wrap-follow
+                       longlines-wrap-follows-window-size))
+  ;; - set
+  (modify-frame-parameters (selected-frame)
+                           '((line-spacing . 1)))
+  (when (and
+         (boundp 'longlines-mode)
+         longlines-mode
+         omm-enable-longline-wrap)
+    (longlines-mode 0)
+    (setq longlines-wrap-follows-window-size t)
+    (longlines-mode 1)))
+
+(defun omm-recall-longline ()
+  (modify-frame-parameters
+   (selected-frame)
+   `((line-spacing . ,(omm-recall 'line-spacing))))
+  (when (and
+         (boundp 'longlines-mode)
+         longlines-mode
+         (omm-recall 'longlines-wrap-follow)
+         omm-enable-longline-wrap)
+    (longlines-mode 0)
+    (setq longlines-wrap-follows-window-size
+          (omm-recall 'longlines-wrap-follow))
+    (longlines-mode 1))
+  )
+
+;;---- layout section
 (defvar omm-line-conf-list mode-line-format
   "Save mode-line-format")
 ;;omm-line-conf-list
 
 (defvar omm-start-var nil
   "If omm-start-var variable is nil, omm-mode is off.
-If you eval omm-toggle function, omm-mode is on.
+If you eval omm-toggle-layout function, omm-mode is on.
 If this variable is t, omm-mode is on.
-If you eval omm-toggle, omm-start-var change nil")
+If you eval omm-toggle-layout, omm-start-var change nil")
 
-(defconst omm-init-list-flag 
-  (list 
+(defconst omm-init-list-flag
+  (list
      (eq linum-mode t)
      (eq scroll-bar-mode t)
      (eq tool-bar-mode t)
@@ -260,7 +436,7 @@ If you eval omm-toggle, omm-start-var change nil")
 ;; (omm-linum-toggle 1)
 
 
-(defun omm-style-on ()
+(defun omm-layout-on ()
   (interactive)
   (omm-linum-toggle -1)
   (scroll-bar-mode -1)
@@ -274,9 +450,9 @@ If you eval omm-toggle, omm-start-var change nil")
   (setq omm-start-var t))
 
 ;;test code
-;;(omm-style-on)
+;;(omm-layout-on)
 
-(defun omm-style-off ()
+(defun omm-layout-off ()
   (interactive)
   (if (eq (nth 0 omm-init-list-flag) t)
       (omm-linum-toggle 1))
@@ -296,9 +472,10 @@ If you eval omm-toggle, omm-start-var change nil")
   (setq omm-start-var nil))
 
 ;;test code
-;;(omm-style-off)
+;;(omm-layout-off)
 
-(defun omm-style-off-debug ()
+(dont-compile
+  (defun omm-layout-off-debug ()
     (omm-linum-toggle 1)
     (scroll-bar-mode -1)
     (tool-bar-mode 1)
@@ -308,49 +485,48 @@ If you eval omm-toggle, omm-start-var change nil")
         (elscreen-mode -1))
     (if (fboundp 'tabbar-mode)
         (tabbar-mode 1))
-    (setq omm-start-var nil))
+    (setq omm-start-var nil)))
 
-;;test code
-;; (omm-style-off-debug)
+;; test code
+;; (omm-layout-off-debug)
 
-(defun omm-toggle ()
+(defun omm-toggle-layout ()
   (interactive)
   (if (eq omm-start-var nil)
-	  (progn 
-        (omm-style-on))
-		
-      (omm-style-off)))
+        (omm-layout-on)
+      (omm-layout-off)))
 
 ;;test code
-;;(omm-toggle)
+;;(omm-toggle-layout)
 
 (defun omm-start ()
   (interactive)
-  (omm-style-on)
+  (omm-remember-margins)
+  (omm-layout-on)
   (omm-fullscreen)
-  (omm-margins-toggle t)
   )
 
-;;test code 
+;;test code
 ;;(omm-start)
 
 (defun omm-stop ()
   (interactive)
-  (omm-style-off)
+  (omm-layout-off)
   (omm-non-fullscreen)
-  (omm-margins-toggle nil)
+  (omm-recall-margins)
   )
 
-;;test code 
+;;test code
 ;;(omm-stop)
 
 (defun omm-minor-mode-start ()
-  (omm-style-on)
+  (omm-layout-on)
   (set-keymap-parent omm-minor-mode-child-map
                      omm-mode-map)
   (omm-run-hook)
+  (omm-remember-frame-size)
   (omm-fullscreen)
-  (omm-margins-toggle t)
+  (omm-remember-margins)
   ;; (add-hook 'find-file-hook
   ;;           (lambda ()
   ;;             (omm-change-mode-line nil))
@@ -363,9 +539,10 @@ If you eval omm-toggle, omm-start-var change nil")
   ;;  (remove-hook 'after-init-hook)
   ;; (lambda ()
   ;;   omm-change-mode-line nil))
-  (omm-style-off)
+  (omm-layout-off)
   (omm-non-fullscreen)
-  (omm-margins-toggle nil)
+  (omm-recall-margins)
+  (omm-remember-frame-size)
   )
 
 ;;test code
@@ -373,7 +550,7 @@ If you eval omm-toggle, omm-start-var change nil")
 
 (defun omm-define-keymap ()
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "C-c C-o") 'omm-toggle)
+    (define-key map (kbd "C-c C-o") 'omm-toggle-layout)
     (define-key map (kbd "<f11>") 'omm-toggle-fullscreen)
     map))
 
@@ -386,7 +563,9 @@ If you eval omm-toggle, omm-start-var change nil")
 ;;test code
 ;;omm-mode-map
 ;; (pop omm-mode-map)
+
 (defvar omm-minor-mode-child-map (make-sparse-keymap))
+
 (define-minor-mode omm-mode
   "Ommwriter like mode"
   :require 'omm
@@ -396,13 +575,35 @@ If you eval omm-toggle, omm-start-var change nil")
   :keymap omm-mode-map
   (if omm-mode
       (omm-minor-mode-start)
-    (omm-minor-mode-stop)))
+    (omm-minor-mode-stop)
+    ))
+
+;; test-code
+;; (omm-mode)
+;; (omm-mode 1)
+;; (omm-mode -1)
 
 (defun omm-run-hook ()
-  (run-hooks 'omm-hook))
+  (run-hooks 'omm-mode-hook))
+
+(dont-compile
+  (when (fboundp 'expectations)
+    (expectations
+     (expect t
+             (omm-mode 1))
+     (expect 25
+             left-margin-width)
+     (expect 25
+             right-margin-width)
+     (expect nil
+             (omm-mode -1))
+     (expect 0
+             left-margin-width)
+     (expect 0
+             right-margin-width)))
+  )
 
 
 (provide 'omm-mode)
 
 ;;; filename ends here
-
