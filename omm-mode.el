@@ -397,18 +397,20 @@ If you eval omm-toggle-layout, omm-start-var change nil")
 
 (defconst omm-init-list-flag
   (list
-     (eq linum-mode t)
-     (eq scroll-bar-mode t)
-     (eq tool-bar-mode t)
-     (eq menu-bar-mode t)
-     omm-line-conf-list
-    (if (fboundp 'elscreen-mode)
-        (list t (eq elscreen-mode t))
-      (list nil nil))
-    (if (fboundp 'tabbar-mode)
-        (list t (eq tabbar-mode t))
-      (list nil nil))
-    ))
+   (if (boundp 'linum-mode)
+       (eq linum-mode t)
+     nil)
+   (eq scroll-bar-mode t)
+   (eq tool-bar-mode t)
+   (eq menu-bar-mode t)
+   omm-line-conf-list
+   (if (fboundp 'elscreen-mode)
+       (list t (eq elscreen-mode t))
+     (list nil nil))
+   (if (fboundp 'tabbar-mode)
+       (list t (eq tabbar-mode t))
+     (list nil nil))
+   ))
 
 (defun omm-change-mode-line (apply-state)
   (save-excursion
